@@ -1,0 +1,25 @@
+- name: Delete Drop One LAN Environment
+  hosts: localhost
+  connection: local
+  vars:
+    resource_group: SharedEnv
+    vn_name: NetworkLAN
+    vn_secgroup: NetworkLAN_SecGroup
+    vn_subnet: NetworkLAN_Subnet
+    location: australiaeast
+  tasks:
+  - name: Delete subnet
+    azure_rm_subnet:
+      resource_group: "{{ resource_group }}"
+      name: "{{ vn_subnet }}"
+      state: absent
+  - name: Delete virtual network
+    azure_rm_virtualnetwork:
+      resource_group: "{{ resource_group }}"
+      name: "{{ vn_name }}"
+      state: absent
+  - name: Delete Resource Group
+    azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
+        state: absent

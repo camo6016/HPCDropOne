@@ -1,0 +1,43 @@
+# Description
+# ===========
+# This playbook create an Azure VM with public IP, and open 22 port for SSH
+
+- name: Create Cisco CSR Virtual Router
+  hosts: localhost
+  connection: local
+  vars:
+    resource_group: 1.1.1_DeployCiscoCSR_Azure
+    vm_name: CiscoCSR1000V
+    vm_ip: CiscoCSR1000V_PublicIP
+    vm_vNic: CiscoCSR1000V_vNic
+    vn_name: NetworkLAN
+    vn_secgroup: NetworkLAN_SecGroup
+    vn_subnet: NetworkLAN_Subnet
+    location: australiaeast
+  tasks:
+  - name: Create Public IP
+    azure_rm_publicipaddress:
+      resource_group: "{{ resource_group }}"
+      allocation_method: Static
+      name: "{{ vm_ip }}"
+  - name: Create vNic
+    azure_rm_networkinterface:
+      resource_group: "{{ resource_group }}"
+      name: "{{ vm_vNic }}"
+      virtual_network: "{{ vn_name }}"
+      subnet: "{{ vn_subnet }}"
+      public_ip_name: "{{ vm_ip }}"
+      security_group: "{{ vn_secgroup }}"
+  - name: Create Router
+    azure_rm_virtualmachine:
+      resource_group: "{{ resource_group }}"
+      name: "{{ vm_name }}"
+      vm_size: Standard_B1S
+      admin_username: azureuser
+      admin_password: Password@123
+      network_interfaces: "{{ vm_name }}"
+      image:
+        offer: UbuntuServer
+        publisher: Canonical
+        sku: 16.04-LTS
+        version: latest
