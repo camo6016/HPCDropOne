@@ -6,23 +6,39 @@
   hosts: localhost
   connection: local
   vars:
+    network_resource_group: SharedEnv
     resource_group: 1.1.1_DeployCiscoCSR_Azure
     vm_name: CiscoCSR1000V
     vm_ip: CiscoCSR1000V_PublicIP
     vm_vNic: CiscoCSR1000V_vNic
     vn_name: NetworkLAN
-    vn_secgroup: NetworkLAN_SecGroup
+    vn_secgroup: CiscoCSR1000V_SecGroup
     vn_subnet: NetworkLAN_Subnet
     location: australiaeast
   tasks:
+  - name: Create a Resource Group
+    azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
   - name: Create Public IP
     azure_rm_publicipaddress:
-      resource_group: "{{ resource_group }}"
+      resource_group: "{{ network_resource_group }}"
       allocation_method: Static
       name: "{{ vm_ip }}"
+  - name: Create Network Security Group that allows SSH
+    azure_rm_securitygroup:
+      resource_group: "{{ network_resource_group }}"
+      name: "{{ vn_secgroup }}"
+      rules:
+        - name: SSH
+          protocol: Tcp
+          destination_port_range: 22
+          access: Allow
+          priority: 1001
+          direction: Inbound
   - name: Create vNic
     azure_rm_networkinterface:
-      resource_group: "{{ resource_group }}"
+      resource_group: "{{ network_resource_group }}"
       name: "{{ vm_vNic }}"
       virtual_network: "{{ vn_name }}"
       subnet: "{{ vn_subnet }}"
@@ -32,12 +48,18 @@
     azure_rm_virtualmachine:
       resource_group: "{{ resource_group }}"
       name: "{{ vm_name }}"
-      vm_size: Standard_B1S
-      admin_username: azureuser
-      admin_password: Password@123
-      network_interfaces: "{{ vm_name }}"
+      vm_size: Standard_B2s
+      admin_username: cameron
+      admin_password: Telstra1234!
+      network_interfaces:
+         - name: "{{ vm_vNic }}"
+           resource_group: "{{ network_resource_group }}"
       image:
-        offer: UbuntuServer
-        publisher: Canonical
-        sku: 16.04-LTS
-        version: latest
+        offer: cisco-csr-1000v
+        publisher: cisco
+        sku: 16_10-byol
+        version: 16.10.220190622
+      plan:
+        name: 16_10-byol
+        publisher: cisco
+        product: cisco-csr-1000v
